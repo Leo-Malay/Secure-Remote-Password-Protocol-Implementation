@@ -31,14 +31,22 @@ public class Test {
         server.computeSessionKey();
         client.computeSessionKey();
 
-        // Check if both have the same key
-        if (server.sessionKey.equals(client.sessionKey)) {
+        // Both client and server will compute key verifier
+        client.computeSessionKeyVerifier();
+        server.computeSessionKeyVerifier();
 
-            System.out.println("Authenticated");
-            System.out.println("Server: " + server.sessionKey.toString());
-            System.out.println("Client: " + client.sessionKey.toString());
+        // Client will send his key verifier to Server
+        boolean server_response = server.verifySessionKey(client.M);
+        if (server_response) {
+            // Server will send his key verifer to Client
+            boolean client_response = client.verifySessionKey(server.M);
+            if (client_response) {
+                System.out.println("Client and Server are mutually authenticated.");
+            } else {
+                System.out.println("Client found Server's proof to be incorrect. Client will reject authentication.");
+            }
         } else {
-            System.out.println("Not Authenticated");
+            System.out.println(" Server found Client's proof to be incorrect. Server will reject authentication.");
         }
     }
 }

@@ -13,6 +13,7 @@ public class SRP_Server extends SRP_Utility {
     public BigInteger A; // A: g^a mod N (sent by client)
     public BigInteger B; // B: (g^b + kv) mod N
     public BigInteger sessionKey; // S: H((Av^u)^(b))
+    public BigInteger M; // M: H(A, M, S); temp: H(H(N) xor H(g), H(I), s, A, B, S)
 
     public SRP_Server() {
         try {
@@ -68,6 +69,38 @@ public class SRP_Server extends SRP_Utility {
             this.sessionKey = SRP_Utility.hash(temp.toString());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void computeSessionKeyVerifier() {
+        StringBuilder result = new StringBuilder();
+
+        try {
+            BigInteger N_xor_G = SRP_Utility.hash(SRP_Utility.N.toString())
+                    .xor(SRP_Utility.hash(SRP_Utility.g.toString()));
+            result.append(N_xor_G.toString());
+
+            result.append(SRP_Utility.hash(this.username).toString());
+            result.append(this.salt.toString());
+            result.append(this.A.toString());
+            result.append(this.B.toString());
+            result.append(this.sessionKey.toString());
+
+            this.M = SRP_Utility
+                    .hash(this.A.toString().concat(result.toString().concat(this.sessionKey.toString())));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Boolean verifySessionKey(BigInteger M) {
+        try {
+            BigInteger client_hash = SRP_Utility
+                    .hash(this.A.toString().concat(M.toString().concat(this.sessionKey.toString())));
+            return client_hash.compareTo(this.M) == 0;
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }
