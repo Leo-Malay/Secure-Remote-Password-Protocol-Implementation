@@ -2,8 +2,8 @@
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 
-public class Server extends SRP {
-    private String username; // I: pulled from database
+public class SRP_Server extends SRP_Utility {
+    public String username; // I: pulled from database
     public BigInteger salt; // salt: pulled from database
 
     private BigInteger k; // k: H(N, g)
@@ -14,23 +14,22 @@ public class Server extends SRP {
     public BigInteger B; // B: (g^b + kv) mod N
     public BigInteger sessionKey; // S: H((Av^u)^(b))
 
-    public Server() {
+    public SRP_Server() {
         try {
-            this.k = SRP.hash(SRP.N.add(SRP.g).toString());
+            this.k = SRP_Utility.computeK();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public BigInteger genSalt() {
-        return SRP.generateRandomBigInteger(SRP.N);
+        return SRP_Utility.generateRandomBigInteger(SRP_Utility.N);
     }
 
     public BigInteger genVerifier(BigInteger salt, String password) {
         try {
-            BigInteger temp = new BigInteger(password.getBytes());
-            BigInteger x = SRP.hash(salt.add(temp).toString());
-            return SRP.modularExponent(SRP.g, x, SRP.N);
+            BigInteger x = SRP_Utility.hash(salt.toString().concat(password));
+            return SRP_Utility.modularExponent(SRP_Utility.g, x, SRP_Utility.N);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -39,8 +38,8 @@ public class Server extends SRP {
 
     public void computePublicPrivatePair() {
         try {
-            this.b = SRP.generateRandomBigInteger(SRP.N);
-            this.B = SRP.modularExponent(SRP.g, this.b, SRP.N).add(this.k.multiply(this.v));
+            this.b = SRP_Utility.generateRandomBigInteger(SRP_Utility.N);
+            this.B = SRP_Utility.modularExponent(SRP_Utility.g, this.b, SRP_Utility.N).add(this.k.multiply(this.v));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -55,7 +54,7 @@ public class Server extends SRP {
     public void setClientPublic(BigInteger A) {
         try {
             this.A = A;
-            this.u = SRP.hash(A.add(this.B).toString());
+            this.u = SRP_Utility.hash(A.toString().concat(this.B.toString()));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -63,9 +62,10 @@ public class Server extends SRP {
 
     public void computeSessionKey() {
         try {
-            BigInteger temp = SRP.modularExponent(this.A.multiply(SRP.modularExponent(this.v, this.u, SRP.N)), this.b,
-                    SRP.N);
-            this.sessionKey = SRP.hash(temp.toString());
+            BigInteger temp = SRP_Utility.modularExponent(
+                    this.A.multiply(SRP_Utility.modularExponent(this.v, this.u, SRP_Utility.N)), this.b,
+                    SRP_Utility.N);
+            this.sessionKey = SRP_Utility.hash(temp.toString());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }

@@ -2,8 +2,8 @@ import java.math.BigInteger;
 
 public class Test {
     public static void main(String[] args) {
-        Client client = new Client();
-        Server server = new Server();
+        SRP_Client client = new SRP_Client();
+        SRP_Server server = new SRP_Server();
 
         String password = "Password";
         // Generating User

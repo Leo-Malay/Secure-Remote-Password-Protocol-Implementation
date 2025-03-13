@@ -3,7 +3,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-public class SRP {
+public class SRP_Utility {
     public static final BigInteger N = new BigInteger(
             "E9E3C8013CF43E080378D682F58D784EB6A9D7A0A2E9A17D8F0A1C9B8BB9B149", 16);
     public static final BigInteger g = BigInteger.valueOf(2);

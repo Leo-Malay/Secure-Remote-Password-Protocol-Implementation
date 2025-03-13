@@ -1,7 +1,7 @@
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 
-public class Client extends SRP {
+public class SRP_Client extends SRP_Utility {
     public String username; // I
     private String password; // p
 
@@ -14,9 +14,9 @@ public class Client extends SRP {
     public BigInteger salt; // salt: random value (sent by server)
     public BigInteger sessionKey; // S: H((B-kv)^(a + ux))
 
-    public Client() {
+    public SRP_Client() {
         try {
-            this.k = SRP.hash(SRP.N.add(SRP.g).toString());
+            this.k = SRP_Utility.computeK();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -24,8 +24,8 @@ public class Client extends SRP {
 
     public void computePublicPrivatePair() {
         try {
-            this.a = SRP.generateRandomBigInteger(SRP.N);
-            this.A = SRP.modularExponent(SRP.g, this.a, SRP.N);
+            this.a = SRP_Utility.generateRandomBigInteger(SRP_Utility.N);
+            this.A = SRP_Utility.modularExponent(SRP_Utility.g, this.a, SRP_Utility.N);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -39,8 +39,7 @@ public class Client extends SRP {
     public void setSalt(BigInteger salt) {
         try {
             this.salt = salt;
-            BigInteger temp = new BigInteger(this.password.getBytes());
-            this.x = SRP.hash(this.salt.add(temp).toString());
+            this.x = SRP_Utility.hash(this.salt.toString().concat(this.password));
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -49,7 +48,7 @@ public class Client extends SRP {
     public void setServerPublic(BigInteger B) {
         try {
             this.B = B;
-            this.u = SRP.hash(this.A.add(B).toString());
+            this.u = SRP_Utility.hash(this.A.toString().concat(B.toString()));
 
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -58,10 +57,10 @@ public class Client extends SRP {
 
     public void computeSessionKey() {
         try {
-            BigInteger v = SRP.modularExponent(SRP.g, this.x, SRP.N);
-            BigInteger temp = SRP.modularExponent(this.B.subtract(this.k.multiply(v)),
-                    this.a.add(this.u.multiply(this.x)), SRP.N);
-            this.sessionKey = SRP.hash(temp.toString());
+            BigInteger v = SRP_Utility.modularExponent(SRP_Utility.g, this.x, SRP_Utility.N);
+            BigInteger temp = SRP_Utility.modularExponent(this.B.subtract(this.k.multiply(v)),
+                    this.a.add(this.u.multiply(this.x)), SRP_Utility.N);
+            this.sessionKey = SRP_Utility.hash(temp.toString());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
