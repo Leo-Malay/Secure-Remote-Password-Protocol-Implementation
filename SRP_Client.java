@@ -15,86 +15,63 @@ public class SRP_Client extends SRP_Utility {
     public BigInteger sessionKey; // S: H((B-kv)^(a + ux))
     public BigInteger M; // M: H(H(N) xor H(g), H(I), s, A, B, S)
 
-    public SRP_Client() {
-        try {
-            this.k = SRP_Utility.computeK();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public SRP_Client() throws NoSuchAlgorithmException {
+        this.k = SRP_Utility.computeK();
     }
 
     public void computePublicPrivatePair() {
-        try {
-            this.a = SRP_Utility.generateRandomBigInteger(SRP_Utility.N);
-            this.A = SRP_Utility.modularExponent(SRP_Utility.g, this.a, SRP_Utility.N);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.a = SRP_Utility.generateRandomBigInteger(SRP_Utility.N);
+        this.A = SRP_Utility.modularExponent(SRP_Utility.g, this.a, SRP_Utility.N);
     }
 
-    public void setUser(String username, String password) {
+    public void setUser(String username, String password) throws Exception {
+        if (username.length() == 0)
+            throw new Exception("Username must be non-empty");
+        if (password.length() == 0)
+            throw new Exception("Password must be non-empty");
         this.username = username;
         this.password = password;
     }
 
-    public void setSalt(BigInteger salt) {
-        try {
-            this.salt = salt;
-            this.x = SRP_Utility.hash(this.salt.toString().concat(this.password));
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+    public void setSalt(BigInteger salt) throws NoSuchAlgorithmException {
+        this.salt = salt;
+        this.x = SRP_Utility.hash(this.salt.toString().concat(this.password));
     }
 
-    public void setServerPublic(BigInteger B) {
-        try {
-            this.B = B;
-            this.u = SRP_Utility.hash(this.A.toString().concat(B.toString()));
+    public void setServerPublic(BigInteger B) throws NoSuchAlgorithmException, Exception {
+        if (B.mod(SRP_Utility.N).equals(BigInteger.ZERO))
+            throw new Exception("B mod N must not be zero");
 
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+        this.B = B;
+        this.u = SRP_Utility.hash(this.A.toString().concat(B.toString()));
     }
 
-    public void computeSessionKey() {
-        try {
-            BigInteger v = SRP_Utility.modularExponent(SRP_Utility.g, this.x, SRP_Utility.N);
-            BigInteger temp = SRP_Utility.modularExponent(this.B.subtract(this.k.multiply(v)),
-                    this.a.add(this.u.multiply(this.x)), SRP_Utility.N);
-            this.sessionKey = SRP_Utility.hash(temp.toString());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+    public void computeSessionKey() throws NoSuchAlgorithmException {
+        BigInteger v = SRP_Utility.modularExponent(SRP_Utility.g, this.x, SRP_Utility.N);
+        BigInteger temp = SRP_Utility.modularExponent(this.B.subtract(this.k.multiply(v)),
+                this.a.add(this.u.multiply(this.x)), SRP_Utility.N);
+        this.sessionKey = SRP_Utility.hash(temp.toString());
     }
 
-    public void computeSessionKeyVerifier() {
+    public void computeSessionKeyVerifier() throws NoSuchAlgorithmException {
         StringBuilder result = new StringBuilder();
 
-        try {
-            BigInteger N_xor_G = SRP_Utility.hash(SRP_Utility.N.toString())
-                    .xor(SRP_Utility.hash(SRP_Utility.g.toString()));
-            result.append(N_xor_G.toString());
+        BigInteger N_xor_G = SRP_Utility.hash(SRP_Utility.N.toString())
+                .xor(SRP_Utility.hash(SRP_Utility.g.toString()));
+        result.append(N_xor_G.toString());
 
-            result.append(SRP_Utility.hash(this.username).toString());
-            result.append(this.salt.toString());
-            result.append(this.A.toString());
-            result.append(this.B.toString());
-            result.append(this.sessionKey.toString());
+        result.append(SRP_Utility.hash(this.username).toString());
+        result.append(this.salt.toString());
+        result.append(this.A.toString());
+        result.append(this.B.toString());
+        result.append(this.sessionKey.toString());
 
-            this.M = new BigInteger(result.toString());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+        this.M = new BigInteger(result.toString());
     }
 
-    public Boolean verifySessionKey(BigInteger M) {
-        try {
-            BigInteger client_hash = SRP_Utility
-                    .hash(this.A.toString().concat(this.M.toString().concat(this.sessionKey.toString())));
-            return client_hash.compareTo(M) == 0;
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return false;
-        }
+    public Boolean verifySessionKey(BigInteger M) throws NoSuchAlgorithmException {
+        BigInteger client_hash = SRP_Utility
+                .hash(this.A.toString().concat(this.M.toString().concat(this.sessionKey.toString())));
+        return client_hash.compareTo(M) == 0;
     }
 }
